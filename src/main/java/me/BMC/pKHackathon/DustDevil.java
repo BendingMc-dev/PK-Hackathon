@@ -1,6 +1,5 @@
 package me.BMC.pKHackathon;
 
-import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ProjectKorra;
 import com.projectkorra.projectkorra.ability.Ability;
 import com.projectkorra.projectkorra.ability.AddonAbility;
@@ -8,25 +7,21 @@ import com.projectkorra.projectkorra.ability.SandAbility;
 import com.projectkorra.projectkorra.configuration.ConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.util.Vector;
 import org.bukkit.Particle;
-import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
-
-import static com.projectkorra.projectkorra.ability.AirAbility.playAirbendingParticles;
 
 public class DustDevil extends SandAbility implements AddonAbility {
 
     public static double mobilityHeight = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.RideHeight", 2); // CHANGEME
     public final double mobilitySpeed = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.MobilitySpeed");
     public final double tornadoLifetime = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Lifetime");
-    //public final String heightparticle = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.HeightParticles"); // CHANGEME
+    // public final String heightparticle = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.HeightParticles"); // CHANGEME
     public Ability ability = this;
     private Vector direction;
     private ArrayList<Entity> affectedEntities;
@@ -62,6 +57,8 @@ public class DustDevil extends SandAbility implements AddonAbility {
 
     public void progress() {
         // if there are reasons to cancel move cancel move
+
+
         if (System.currentTimeMillis() - getStartTime() >= tornadoLifetime) {
             this.remove();
             return;

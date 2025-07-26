@@ -3,13 +3,19 @@ package me.BMC.pKHackathon;
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import org.bukkit.Material;
+import org.bukkit.entity.Boat;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
 
 public class MoveListener implements Listener {
+
+
 
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
@@ -44,6 +50,54 @@ public class MoveListener implements Listener {
         if (move != null) {
             event.setCancelled(true);
             move.progress();
+        }
+    }
+    @EventHandler
+    public void onPlayerExitBoat(VehicleExitEvent event) {
+        Boat boat = (Boat) event.getVehicle();
+        Entity livingEntity = event.getExited();
+
+        if (livingEntity instanceof Player) {
+            Player player = ((Player) livingEntity).getPlayer();
+            BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+
+            if (bPlayer == null) return;
+            if (!bPlayer.canBend(CoreAbility.getAbility(DustDevil.class))) return;
+
+            CoreAbility instances = (CoreAbility) CoreAbility.getAbilitiesByInstances();
+            String bound = bPlayer.getBoundAbilityName();
+
+            if (CoreAbility.getAbility(DustDevil.class) == instances && bound.equalsIgnoreCase("DustDevil")) {
+                event.setCancelled(true);
+            };
+        }
+        else {
+            return;
+        }
+
+    }
+
+    @EventHandler
+    public void onPlayerEnterBoat(PlayerInteractEntityEvent event) {
+        Player player = event.getPlayer();
+        BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+        Entity entity = event.getRightClicked();
+        if (!(bPlayer == null)) return;
+        if (!bPlayer.canBend(CoreAbility.getAbility(DustDevil.class))) return;
+
+        if (entity instanceof Boat) {
+            CoreAbility instances = (CoreAbility) CoreAbility.getAbilitiesByInstances();
+            String bound = bPlayer.getBoundAbilityName();
+
+            if (CoreAbility.getAbility(DustDevil.class) == instances && bound.equalsIgnoreCase("DustDevil")) {
+                event.setCancelled(true);
+
+            }
+            else {
+                return;
+            }
+
+
         }
     }
 }
