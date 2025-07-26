@@ -1,30 +1,49 @@
 package me.BMC.pKHackathon;
 
 import com.projectkorra.projectkorra.BendingPlayer;
-import com.projectkorra.projectkorra.PKListener;
 import com.projectkorra.projectkorra.ability.CoreAbility;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
-import me.BMC.pKHackathon.PKHackathon;
 
 public class MoveListener implements Listener {
-    public PKHackathon ability = PKHackathon.getAbility();
+
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
         if (!event.isSneaking()) return;
+
         final Player player = event.getPlayer();
         final BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
-        if (!bPlayer.canBend())
+        if (!bPlayer.canBend(CoreAbility.getAbility(DustDevil.class))) return;
         if (bPlayer == null) return;
-        String bound = bPlayer.getBoundAbilityName();
-        if (bound.equalsIgnoreCase("PKHackathon")) {
-            final PKHackathon move = CoreAbility.getAbility(player, PKHackathon.class);
 
-            if (player.getLocation().subtract(0, PKHackathon.mobilityHeight, 0).getBlock().getType() == Material.SAND && move != null) {
-                new PKHackathon(player);
-            }
+        String bound = bPlayer.getBoundAbilityName();
+        if (!bound.equalsIgnoreCase("DustDevil")) return;
+
+        final DustDevil move = CoreAbility.getAbility(player, DustDevil.class);
+
+        if (player.getLocation().subtract(0, DustDevil.mobilityHeight, 0).getBlock().getType() == Material.SAND && move != null) {
+            event.setCancelled(true);
+            new DustDevil(player);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+        if (bPlayer == null || !bPlayer.canBend(CoreAbility.getAbility(DustDevil.class))) return;
+
+        String bound = bPlayer.getBoundAbilityName();
+        if (!bound.equalsIgnoreCase("DustDevil")) return;
+
+        DustDevil move = CoreAbility.getAbility(player, DustDevil.class);
+        if (move != null) {
+            event.setCancelled(true);
+            move.progress();
         }
     }
 }
