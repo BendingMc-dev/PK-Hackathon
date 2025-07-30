@@ -23,7 +23,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
     private final ArrayList<Entity> affectedEntities;
     public static double rideheight;
     public final double ridespeed;    
-    private Permission perm;
     
     @Attribute(Attribute.COOLDOWN)
     private final long cooldown;
@@ -76,7 +75,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
     public void load() {
         ProjectKorra.log.info(getName() + "has loaded!" + "\n" + getDescription());
         Bukkit.getPluginManager().registerEvents(new MoveListener(), ProjectKorra.plugin);
-        perm = new Permission("bending.ability.DustDevil");
 
 
 
