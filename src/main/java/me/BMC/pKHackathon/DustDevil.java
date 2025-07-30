@@ -17,26 +17,45 @@ import org.bukkit.Particle;
 import java.util.ArrayList;
 
 public class DustDevil extends SandAbility implements AddonAbility {
-
-    public static double mobilityHeight = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.RideHeight", 2); // CHANGEME
-    public final double mobilitySpeed = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.MobilitySpeed");
-    public final double tornadoLifetime = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Lifetime");
-    // public final String heightparticle = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.HeightParticles"); // CHANGEME
     public Ability ability = this;
     private Vector direction;
     private ArrayList<Entity> affectedEntities;
-
-
-
+    public static double rideheight;
+    public final double ridespeed;    
     private Permission perm;
+    
+    @Attribute(Attribute.COOLDOWN)
     private long cooldown;
+    @Attribute(Attribute.DAMAGE)
+    private double damage;
+    @Attribute(Attribute.HEIGHT)
+    private double height;
+    @Attribute(Attribute.RADIUS)
+    private double radius;
+    @Attribute(Attribute.RANGE)
+    private double range;
+    private Particle heightParticle = this.getHeightParticles();
+    private Location origin;
+	private Location currentLoc;
+	private Location destination;
+    
 
     public DustDevil(Player player) {
         super(player);
-        this.ability = ability;
-        this.affectedEntities = new ArrayList<>();
-
-         cooldown = ConfigManager.getConfig().getLong("ExtraAbilities.GANG.DustDevil.Cooldown", 5000);
+        
+        
+         this.ability = ability;
+         this.affectedEntities = new ArrayList<>();
+         this.rideheight = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Rideheight", 5);
+         this.ridespeed = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Ridespeed", 5);
+         this.speed = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Speed", 5);
+         this.lifetime = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Lifetime", 5000);
+         this.cooldown = ConfigManager.getConfig().getLong("ExtraAbilities.GANG.DustDevil.Cooldown", 5000);
+         this.damage = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Damage",2);
+         this.height = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Height",5);
+         this.radius = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Radius",3);
+         this.range = ConfigManager.getConfig().getDouble("ExtraAbilities.GANG.DustDevil.Range",3);
+        
 
         this.bPlayer.addCooldown(this);
         this.start();
@@ -46,17 +65,34 @@ public class DustDevil extends SandAbility implements AddonAbility {
         ProjectKorra.log.info(getName() + "has loaded!" + "\n" + getDescription());
         Bukkit.getPluginManager().registerEvents(new MoveListener(), ProjectKorra.plugin);
 
-        perm = new Permission("bending.ability.DustDevil");
+        this.perm = new Permission("bending.ability.DustDevil");
 
-        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.RideHeight", 2);
-        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.MobilitySpeed", 1);
-        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Cooldown", 5000);
+
+
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Rideheight", 5);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Ridespeed", 5);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Speed", 5);
         ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Lifetime", 5000);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Cooldown", 5000);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Damage", 2);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Height", 5);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Radius", 3);
+        ConfigManager.getConfig().addDefault("ExtraAbilities.GANG.DustDevil.Range", 3);
+        
+
 
     }
 
     public void progress() {
-        // if there are reasons to cancel move cancel move
+        if (this.player.isDead() || !this.player.isOnline() {
+            this.remove();
+            return;
+        }  else if (this.currentLoc != null && GeneralMethods.isRegionProtectedFromBuild(this, this.currentLoc)) {
+			this.remove();
+			return;
+		}
+        
+        
 
 
         if (System.currentTimeMillis() - getStartTime() >= tornadoLifetime) {
