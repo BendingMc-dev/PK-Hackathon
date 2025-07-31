@@ -37,11 +37,10 @@ public class DustDevil extends SandAbility implements AddonAbility {
     @Attribute(Attribute.SPEED)
     private final double speed;
     private final double lifetime;
-    private final Particle particle = this.getParticles();
 
     private Location origin;
-	private Location currentLoc;
-	private Location destination;
+    private Location currentLoc;
+    private Location destination;
     private final String path;
     private double heightParticle;
     private double degreeParticle;
@@ -120,14 +119,23 @@ public class DustDevil extends SandAbility implements AddonAbility {
                 tickBoatMovement(boat);
                 drawParticles();
             }
+		
         }
+	    else {
+		combatParticles();
+	    }
     }
 
     public void stop() {
       this.remove();
       // Bukkit.getServer().getPluginManager().removePermission(perm); Not sure why I had this line here?
     }
+    public void combatParticles () {
+       
+       affectEntity();    
 
+	    
+    }
     public void drawParticles() {
         /* r(y) = r^base (r^base - r^top / h) * y
            x = x^0 + r(y) x cos(θ)
@@ -167,8 +175,25 @@ public class DustDevil extends SandAbility implements AddonAbility {
             }
 
         }
+    
+    public void affectEntity() {
+	ArrayList<Entity> affectedEntities = GeneralMethods.getEntitiesAroundPoint(currentLoc, radius);
+        for (Entity entities : entity) {
+		if (!(entity.getUniqueId instanceof Player)) {
+			DamageHandler.damageEntity(entity, damage, this);
+			return;
+		}
+		else {
+			Player player = (Player) entity;
+			DamageHandler.damageEntity(player, damage, this);
+		}
+	}
+      	
+	    
+	    
 
-
+	    
+    }
     public Particle getParticles() {
         Particle particle = Particle.valueOf(ConfigManager.getConfig().getString("ExtraAbilities.GANG.DustDevil.Particle"));
         if (particle != null) {
