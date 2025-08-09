@@ -6,16 +6,19 @@ import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.SandAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.configuration.ConfigManager;
+import com.projectkorra.projectkorra.util.DamageHandler;
+import com.projectkorra.projectkorra.util.ParticleEffect;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
 import org.bukkit.util.Vector;
 import org.bukkit.Particle;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class DustDevil extends SandAbility implements AddonAbility {
@@ -65,6 +68,8 @@ public class DustDevil extends SandAbility implements AddonAbility {
         this.range = ConfigManager.getConfig().getDouble(path + "Range", 3);
         this.heightParticle = ConfigManager.getConfig().getDouble(path + "HeightParticle", 0.2);
         this.degreeParticle = ConfigManager.getConfig().getDouble(path + "DegreeParticle", 10);
+
+        this.currentLoc = player.getLocation();
 
 
         this.bPlayer.addCooldown(this);
@@ -125,18 +130,37 @@ public class DustDevil extends SandAbility implements AddonAbility {
 		combatParticles();
 	    }
     }
-
     public void stop() {
       this.remove();
-      // Bukkit.getServer().getPluginManager().removePermission(perm); Not sure why I had this line here?
     }
-    public void combatParticles () {
-       
-       affectEntity();    
+    public void combatParticles() {
+       double xOffset = 0;
+       double yOffset = 0;
+       double zOffset = 0;
+       int particleAmount = 1;
+
+
+       drawParticles();
+
+
+        Location spawnLoc = player.getEyeLocation().clone().add(player.getEyeLocation().getDirection().clone().normalize().multiply(0.8)); // distance ahead
+        currentLoc = spawnLoc;
+        if (getParticles() != null) {
+            spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
+
+            affectEntity();
+        }
+        else {
+            spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
+            playSandbendingSound(spawnLoc);
+            affectEntity();
+
+        }
 
 	    
     }
     public void drawParticles() {
+
         /* r(y) = r^base (r^base - r^top / h) * y
            x = x^0 + r(y) x cos(θ)
            y = z^0 + r(y) x sin(θ)
@@ -177,14 +201,15 @@ public class DustDevil extends SandAbility implements AddonAbility {
         }
     
     public void affectEntity() {
-	ArrayList<Entity> affectedEntities = GeneralMethods.getEntitiesAroundPoint(currentLoc, radius);
+	List<Entity> entity = GeneralMethods.getEntitiesAroundPoint(currentLoc, radius);
         for (Entity entities : entity) {
-		if (!(entity.getUniqueId instanceof Player)) {
-			DamageHandler.damageEntity(entity, damage, this);
+		if (!(entities instanceof Player)) {
+
+			DamageHandler.damageEntity(entities, damage, this);
 			return;
 		}
 		else {
-			Player player = (Player) entity;
+			Player player = (Player) entities;
 			DamageHandler.damageEntity(player, damage, this);
 		}
 	}

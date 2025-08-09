@@ -8,6 +8,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -28,9 +29,9 @@ public class MoveListener implements Listener {
         String bound = bPlayer.getBoundAbilityName();
         if (!bound.equalsIgnoreCase("DustDevil")) return;
 
-       /* if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK && !player.isSneaking()) {
+        if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK && !player.isSneaking()) {
            new DustDevil(player);
-       } */
+       }
     }
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
