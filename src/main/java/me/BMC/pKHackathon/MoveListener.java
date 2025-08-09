@@ -33,6 +33,7 @@ public class MoveListener implements Listener {
            new DustDevil(player);
        }
     }
+
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
         if (!event.isSneaking()) return;
@@ -48,7 +49,6 @@ public class MoveListener implements Listener {
         final DustDevil move = CoreAbility.getAbility(player, DustDevil.class);
 
         if (player.getLocation().subtract(0, DustDevil.rideheight, 0).getBlock().getType() == Material.SAND && move != null) {
-            event.setCancelled(true);
             new DustDevil(player);
         }
     }

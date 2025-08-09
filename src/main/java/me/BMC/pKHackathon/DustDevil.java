@@ -6,27 +6,25 @@ import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.SandAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.configuration.ConfigManager;
-import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-import org.bukkit.Particle;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 public class DustDevil extends SandAbility implements AddonAbility {
     private Vector direction;
     private final ArrayList<Entity> affectedEntities;
     public static double rideheight;
-    public final double ridespeed;    
-    
+    public final double ridespeed;
+
     @Attribute(Attribute.COOLDOWN)
     private final long cooldown;
     @Attribute(Attribute.DAMAGE)
@@ -45,21 +43,19 @@ public class DustDevil extends SandAbility implements AddonAbility {
     private Location currentLoc;
     private Location destination;
     private final String path;
-    private double heightParticle;
-    private double degreeParticle;
-    
+    private final double heightParticle;
+    private final double degreeParticle;
+
 
     public DustDevil(Player player) {
         super(player);
 
-
         this.affectedEntities = new ArrayList<>();
         this.path = "ExtraAbilities.GANG.DustDevil.";
 
-
-        this.rideheight = ConfigManager.getConfig().getDouble(path + "Rideheight", 5);
+        rideheight = ConfigManager.getConfig().getDouble(path + "Rideheight", 5);
         this.ridespeed = ConfigManager.getConfig().getDouble(path + "Ridespeed", 5);
-        this.speed = ConfigManager.getConfig().getDouble(path + "Speed", 5);
+        this.speed = ConfigManager.getConfig().getDouble(path + "Speed", 2);
         this.lifetime = ConfigManager.getConfig().getDouble(path + "Lifetime", 5000);
         this.cooldown = ConfigManager.getConfig().getLong(path + "Cooldown", 5000);
         this.damage = ConfigManager.getConfig().getDouble(path + "Damage", 2);
@@ -71,7 +67,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
 
         this.currentLoc = player.getLocation();
 
-
         this.bPlayer.addCooldown(this);
         this.start();
     }
@@ -79,9 +74,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
     public void load() {
         ProjectKorra.log.info(getName() + "has loaded!" + "\n" + getDescription());
         Bukkit.getPluginManager().registerEvents(new MoveListener(), ProjectKorra.plugin);
-
-
-
 
         ConfigManager.getConfig().addDefault(path + "Rideheight", 5);
         ConfigManager.getConfig().addDefault(path + "Ridespeed", 5);
@@ -94,7 +86,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
         ConfigManager.getConfig().addDefault(path + "Range", 3);
         ConfigManager.getConfig().addDefault(path + "HeightParticle", 0.2);
         ConfigManager.getConfig().addDefault(path + "DegreeParticle", 10);
-        
 
 
     }
@@ -103,12 +94,10 @@ public class DustDevil extends SandAbility implements AddonAbility {
         if (this.player.isDead() || !this.player.isOnline()) {
             this.remove();
             return;
-        }   else if (this.currentLoc != null && GeneralMethods.isRegionProtectedFromBuild(this, this.currentLoc)) {
-			this.remove();
-			return;
-		}
-        
-        
+        } else if (this.currentLoc != null && GeneralMethods.isRegionProtectedFromBuild(this, this.currentLoc)) {
+            this.remove();
+            return;
+        }
 
 
         if (System.currentTimeMillis() - getStartTime() >= lifetime) {
@@ -124,41 +113,35 @@ public class DustDevil extends SandAbility implements AddonAbility {
                 tickBoatMovement(boat);
                 drawParticles();
             }
-		
+        } else {
+            combatParticles();
         }
-	    else {
-		combatParticles();
-	    }
     }
+
     public void stop() {
-      this.remove();
+        this.remove();
     }
+
     public void combatParticles() {
-       double xOffset = 0;
-       double yOffset = 0;
-       double zOffset = 0;
-       int particleAmount = 1;
+        double xOffset = 0;
+        double yOffset = 0;
+        double zOffset = 0;
+        int particleAmount = 1;
 
-
-       drawParticles();
-
+        drawParticles();
 
         Location spawnLoc = player.getEyeLocation().clone().add(player.getEyeLocation().getDirection().clone().normalize().multiply(0.8)); // distance ahead
         currentLoc = spawnLoc;
         if (getParticles() != null) {
             spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
 
-            affectEntity();
-        }
-        else {
+        } else {
             spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
             playSandbendingSound(spawnLoc);
-            affectEntity();
-
         }
-
-	    
+        damage();
     }
+
     public void drawParticles() {
 
         /* r(y) = r^base (r^base - r^top / h) * y
@@ -174,64 +157,57 @@ public class DustDevil extends SandAbility implements AddonAbility {
            Convert degrees to radians: θ = ° * π / 180
          */
 
-             double xOffset = 0;
-             double yOffset = 0;
-             double zOffset = 0;
-             int particleAmount = 1;
-             int x = 0;
-             int z = 0;
+        double xOffset = 0;
+        double yOffset = 0;
+        double zOffset = 0;
+        int particleAmount = 1;
+        int x = 0;
+        int z = 0;
 
-             for (double y = 0; y < height; y += heightParticle) { // Temporarily Twister's code, really want to make our own custom implementation. @Snowy do the math pal
-               final double animRadius = ((radius / height) * y);
-                for (double i = -180; i <= 180; i += degreeParticle) {
-                    final Vector animDir = GeneralMethods.rotateXZ(new Vector(1, 0, 1), i);
-                    final Location animLoc = this.player.getLocation().clone().add(animDir.multiply(animRadius));
-                    animLoc.add(x, y, z);
-                      Particle particles = this.getParticles();
-                      if (particles != null) {
-                          animLoc.getWorld().spawnParticle(Particle.valueOf(String.valueOf(particles)), animLoc, particleAmount, xOffset, yOffset, zOffset);
-                          playSandbendingSound(animLoc);
-                      }
-                      else
-                      animLoc.getWorld().spawnParticle(Particle.valueOf("FALLING_DUST"), animLoc, particleAmount, xOffset, yOffset, zOffset);
-                      playSandbendingSound(animLoc);
+        for (double y = 0; y < height; y += heightParticle) { // Temporarily Twister's code, really want to make our own custom implementation. @Snowy do the math pal
+            final double animRadius = ((radius / height) * y);
+            for (double i = -180; i <= 180; i += degreeParticle) {
+                final Vector animDir = GeneralMethods.rotateXZ(new Vector(1, 0, 1), i);
+                final Location animLoc = this.player.getLocation().clone().add(animDir.multiply(animRadius));
+                animLoc.add(x, y, z);
+                Particle particles = this.getParticles();
+                if (particles != null) {
+                    if (particles == Particle.FALLING_DUST || particles == Particle.BLOCK || particles == Particle.DUST) {
+                        animLoc.getWorld().spawnParticle(particles, animLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
+                    } else {
+                        animLoc.getWorld().spawnParticle(particles, animLoc, particleAmount, xOffset, yOffset, zOffset);
+                    }
+                    playSandbendingSound(animLoc);
                 }
             }
-
         }
-    
-    public void affectEntity() {
-	List<Entity> entity = GeneralMethods.getEntitiesAroundPoint(currentLoc, radius);
-        for (Entity entities : entity) {
-		if (!(entities instanceof Player)) {
 
-			DamageHandler.damageEntity(entities, damage, this);
-			return;
-		}
-		else {
-			Player player = (Player) entities;
-			DamageHandler.damageEntity(player, damage, this);
-		}
-	}
-      	
-	    
-	    
-
-	    
     }
-    public Particle getParticles() {
-        Particle particle = Particle.valueOf(ConfigManager.getConfig().getString("ExtraAbilities.GANG.DustDevil.Particle"));
-        if (particle != null) {
-            return particle;
+
+    public void damage() { // @TODO @RyanDusty are you sure you've done this correctly?
+        for (Entity entity : GeneralMethods.getEntitiesAroundPoint(currentLoc, 1)) {
+            if (entity instanceof LivingEntity && entity.getUniqueId() != player.getUniqueId()) {
+                ((LivingEntity) entity).damage(damage);
+                return;
+            }
         }
-        return Particle.BLOCK;
+    }
+
+    public Particle getParticles() {
+        String particleName = ConfigManager.getConfig().getString("ExtraAbilities.GANG.DustDevil.Particle"); // @TODO make this work...
+        if (particleName == null || particleName.isEmpty()) {
+            return Particle.FALLING_DUST;
+        }
+        try {
+            return Particle.valueOf(particleName);
+        } catch (IllegalArgumentException e) {
+            return Particle.FALLING_DUST;
+        }
     }
 
     public void tickBoatMovement(Boat boat) {
-        boat.setGravity(false);
-        boat.setVelocity(direction.multiply(ridespeed));
+        boat.setVelocity(direction.multiply(ridespeed).add(new Vector(0, 0.1, 0))); // @TODO adjust the vector to "push" up at start then continue at fixed y above the ground
     }
-
 
     @Override
     public boolean isSneakAbility() {
@@ -250,21 +226,21 @@ public class DustDevil extends SandAbility implements AddonAbility {
 
     @Override
     public String getName() {
-        return "Dust Devil";
+        return "DustDevil";
     }
 
     @Override
-    public String getInstructions(){
+    public String getInstructions() {
         return "press x to pay respect"; // CHANGEME
     }
 
     @Override
-    public String getDescription(){
+    public String getDescription() {
         return "Sand Tornado go brrrr"; // CHANGEME
     }
 
     @Override
-    public Location getLocation() { // What is this?
+    public Location getLocation() {
         return null;
     }
 

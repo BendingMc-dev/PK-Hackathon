@@ -1,8 +1,0 @@
-name: PK-Hackathon
-version: '1.0'
-main: me.BMC.pKHackathon.DustDevil
-api-version: '1.21'
-load: STARTUP
-authors: [ RyanDusty, ShadowThePlayer ]
-description: PK Hackathon 2025 (Combat, Manouverability, Utility)
-website: https://github.com/RyanDusty
