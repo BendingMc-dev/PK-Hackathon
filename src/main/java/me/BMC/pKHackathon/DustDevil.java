@@ -128,8 +128,6 @@ public class DustDevil extends SandAbility implements AddonAbility {
         double zOffset = 0;
         int particleAmount = 1;
 
-        drawParticles();
-
         Location spawnLoc = player.getEyeLocation().clone().add(player.getEyeLocation().getDirection().clone().normalize().multiply(0.8)); // distance ahead
         currentLoc = spawnLoc;
         if (getParticles() != null) {
@@ -139,10 +137,10 @@ public class DustDevil extends SandAbility implements AddonAbility {
             spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
             playSandbendingSound(spawnLoc);
         }
-        damage();
     }
 
     public void drawParticles() {
+        Thread.sleep(100);
 
         /* r(y) = r^base (r^base - r^top / h) * y
            x = x^0 + r(y) x cos(θ)
