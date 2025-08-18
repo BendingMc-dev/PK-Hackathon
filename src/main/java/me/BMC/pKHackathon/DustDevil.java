@@ -16,14 +16,14 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
+import java.io.IOException;
 
 
 public class DustDevil extends SandAbility implements AddonAbility {
     private Vector direction;
-    private final ArrayList<Entity> affectedEntities;
     public static double rideheight;
     public final double ridespeed;
+    private double distanceTravelled;
 
     @Attribute(Attribute.COOLDOWN)
     private final long cooldown;
@@ -39,19 +39,14 @@ public class DustDevil extends SandAbility implements AddonAbility {
     private final double speed;
     private final double lifetime;
 
-    private Location origin;
-    private Location currentLoc;
-    private Location destination;
-    private final String path;
+    private final Location currentLoc;
     private final double heightParticle;
     private final double degreeParticle;
 
 
     public DustDevil(Player player) {
         super(player);
-
-        this.affectedEntities = new ArrayList<>();
-        this.path = "ExtraAbilities.GANG.DustDevil.";
+        String path = "ExtraAbilities.ShadowTP.DustDevil.";
 
         rideheight = ConfigManager.getConfig().getDouble(path + "Rideheight", 5);
         this.ridespeed = ConfigManager.getConfig().getDouble(path + "Ridespeed", 5);
@@ -74,6 +69,7 @@ public class DustDevil extends SandAbility implements AddonAbility {
     public void load() {
         ProjectKorra.log.info(getName() + "has loaded!" + "\n" + getDescription());
         Bukkit.getPluginManager().registerEvents(new MoveListener(), ProjectKorra.plugin);
+        String path = "ExtraAbilities.ShadowTP.DustDevil.";
 
         ConfigManager.getConfig().addDefault(path + "Rideheight", 5);
         ConfigManager.getConfig().addDefault(path + "Ridespeed", 5);
@@ -86,6 +82,8 @@ public class DustDevil extends SandAbility implements AddonAbility {
         ConfigManager.getConfig().addDefault(path + "Range", 3);
         ConfigManager.getConfig().addDefault(path + "HeightParticle", 0.2);
         ConfigManager.getConfig().addDefault(path + "DegreeParticle", 10);
+
+        ConfigManager.defaultConfig.save();
 
 
     }
@@ -123,24 +121,42 @@ public class DustDevil extends SandAbility implements AddonAbility {
     }
 
     public void combatParticles() {
-        double xOffset = 0;
-        double yOffset = 0;
-        double zOffset = 0;
-        int particleAmount = 1;
+        Vector direction = player.getEyeLocation().getDirection().normalize();
 
-        Location spawnLoc = player.getEyeLocation().clone().add(player.getEyeLocation().getDirection().clone().normalize().multiply(0.8)); // distance ahead
-        currentLoc = spawnLoc;
-        if (getParticles() != null) {
-            spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
+        double xOffset = 0.1;
+        double yOffset = 0.1;
+        double zOffset = 0.1;
+        int particleAmount = 3;
 
-        } else {
-            spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 0, Bukkit.createBlockData(Material.SAND));
-            playSandbendingSound(spawnLoc);
+        Location spawnLoc = player.getEyeLocation().clone().add(direction.multiply(0.2));
+
+        for (int i = 0; i < 2; i++) {
+            distanceTravelled++;
+            if (distanceTravelled >= range) {
+                return;
+            }
+            if (GeneralMethods.isSolid(spawnLoc.getBlock()) || isWater(spawnLoc.getBlock())) {
+                distanceTravelled = range;
+                return;
+            }
+
+            if (getParticles() != null) {
+                spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 100, Bukkit.createBlockData(Material.SAND));
+                playSandbendingSound(spawnLoc);
+            } else {
+                spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 100, Bukkit.createBlockData(Material.SAND));
+                playSandbendingSound(spawnLoc);
+            }
+
+            // MOVE THE SPAWN LOCATION FORWARD!
+            spawnLoc.add(direction.clone().multiply(1));
+
+            damage();
         }
+        remove();
     }
 
     public void drawParticles() {
-        Thread.sleep(100);
 
         /* r(y) = r^base (r^base - r^top / h) * y
            x = x^0 + r(y) x cos(θ)
