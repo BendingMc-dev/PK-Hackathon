@@ -48,7 +48,8 @@ public class DustDevil extends SandAbility implements AddonAbility {
         super(player);
         String path = "ExtraAbilities.ShadowTP.DustDevil.";
 
-        rideheight = ConfigManager.getConfig().getDouble(path + "Rideheight", 5);
+        this.distanceTravelled = 0;
+        this.rideheight = ConfigManager.getConfig().getDouble(path + "Rideheight", 5);
         this.ridespeed = ConfigManager.getConfig().getDouble(path + "Ridespeed", 5);
         this.speed = ConfigManager.getConfig().getDouble(path + "Speed", 2);
         this.lifetime = ConfigManager.getConfig().getDouble(path + "Lifetime", 5000);
@@ -89,6 +90,9 @@ public class DustDevil extends SandAbility implements AddonAbility {
     }
 
     public void progress() {
+
+        if (!playerOnSand || !playerOnRedSand) { return; }
+        
         if (this.player.isDead() || !this.player.isOnline()) {
             this.remove();
             return;
@@ -119,39 +123,58 @@ public class DustDevil extends SandAbility implements AddonAbility {
     public void stop() {
         this.remove();
     }
-
+    public boolean playerOnSand(Player player) {
+        Location playerLoc = player.getLocation();
+        Block blockBelow = playerLoc.subtract(0, 1, 0).getBlock();
+        if (blockBelow == Material.SAND) {
+            return true;
+        }
+        return false;
+}
+    public boolean playerOnRedSand(Player player) {
+        Location playerLoc = player.getLocation();
+        Block blockBelow = playerLoc.subtract(0, 1, 0).getBlock();
+        if (blockBelow == Material.RED_SAND) {
+            return true;
+        }
+        return false;
     public void combatParticles() {
         Vector direction = player.getEyeLocation().getDirection().normalize();
+        Location spawnLoc = player.getEyeLocation().clone().add(direction.multiply(0.2));
 
         double xOffset = 0.1;
         double yOffset = 0.1;
         double zOffset = 0.1;
         int particleAmount = 3;
 
-        Location spawnLoc = player.getEyeLocation().clone().add(direction.multiply(0.2));
-
-        for (int i = 0; i < 2; i++) {
-            distanceTravelled++;
+     
+        while (distanceTravelled <= range) {
             if (distanceTravelled >= range) {
-                return;
+                break;
             }
             if (GeneralMethods.isSolid(spawnLoc.getBlock()) || isWater(spawnLoc.getBlock())) {
                 distanceTravelled = range;
-                return;
+                break;
             }
 
             if (getParticles() != null) {
-                spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 100, Bukkit.createBlockData(Material.SAND));
+                spawnLoc.getWorld().spawnParticle(getParticles(), spawnLoc, particleAmount, xOffset, yOffset, zOffset, 2);
                 playSandbendingSound(spawnLoc);
-            } else {
-                spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 100, Bukkit.createBlockData(Material.SAND));
+            } else if (playerOnSand && !playerOnRedSand) {
+                spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 2, Bukkit.createBlockData(Material.SAND));
+                playSandbendingSound(spawnLoc);
+            } else if (playerOnRedSand && !playerOnSand)
+                spawnLoc.getWorld().spawnParticle(Particle.FALLING_DUST, spawnLoc, particleAmount, xOffset, yOffset, zOffset, 2, Bukkit.createBlockData(Material.RED_SAND));
                 playSandbendingSound(spawnLoc);
             }
+            
+            
 
             // MOVE THE SPAWN LOCATION FORWARD!
-            spawnLoc.add(direction.clone().multiply(1));
+            spawnLoc.add(direction.clone().multiply(distanceTravelled));
 
             damage();
+            distanceTravelled++;
         }
         remove();
     }
@@ -203,12 +226,13 @@ public class DustDevil extends SandAbility implements AddonAbility {
             if (entity instanceof LivingEntity && entity.getUniqueId() != player.getUniqueId()) {
                 ((LivingEntity) entity).damage(damage);
                 return;
-            }
+           }
         }
     }
 
     public Particle getParticles() {
-        String particleName = ConfigManager.getConfig().getString("ExtraAbilities.GANG.DustDevil.Particle"); // @TODO make this work...
+        String path = "ExtraAbilities.ShadowTP.DustDevil.";
+        String particleName = ConfigManager.getConfig().getString(path + "Particle"); // @TODO make this work...
         if (particleName == null || particleName.isEmpty()) {
             return Particle.FALLING_DUST;
         }
@@ -225,7 +249,7 @@ public class DustDevil extends SandAbility implements AddonAbility {
 
     @Override
     public boolean isSneakAbility() {
-        return true;
+        return false;
     }
 
     @Override
@@ -245,17 +269,17 @@ public class DustDevil extends SandAbility implements AddonAbility {
 
     @Override
     public String getInstructions() {
-        return "press x to pay respect"; // CHANGEME
+        return "Left click in a boat on sand to trigger a sand tornado which propels the boat forwards. Alternatively, left click whilst standing on sand without a boat to summon a tornado and shoot sand projectiles."; // CHANGEME
     }
 
     @Override
     public String getDescription() {
-        return "Sand Tornado go brrrr"; // CHANGEME
+        return "Big sand tornado spins"; // CHANGEME
     }
 
     @Override
     public Location getLocation() {
-        return null;
+        return this.currentLoc;
     }
 
     @Override
