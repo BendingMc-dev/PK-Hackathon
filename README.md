@@ -19,7 +19,7 @@ Highly customisable config which allows for significant modification of the abil
 
 ### Showcase:
 Boat propulsion:
-https://medal.tv/games/minecraft/clips/kVCrfaeXmXUG78WOm?invite=cr-MSxNM1YsMTgxMjUxMjM 
+https://medal.tv/games/minecraft/clips/kVBUPue2ZW59TclZm?invite=cr-MSxRelYsMTgxMjUxMjM
 
 Combat move:
 https://medal.tv/games/minecraft/clips/kVCrfaeXmXUG78WOm?invite=cr-MSxuNkssMTgxMjUxMjM 
